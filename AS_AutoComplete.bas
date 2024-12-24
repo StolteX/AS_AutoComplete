@@ -32,14 +32,14 @@ Public Sub Initialize (Callback As Object, EventName As String,RootPanel As B4XV
 	
 	xpnl_BackgroundPanel = xui.CreatePanel("xpnl_BackgroundPanel")
 	xpnl_BackgroundPanel.Visible = False
-	RootPanel.AddView(xpnl_BackgroundPanel,RootPanel.Left,-RootPanel.Top,RootPanel.Width,RootPanel.Height + RootPanel.Top)
+	RootPanel.AddView(xpnl_BackgroundPanel,m_RootPanel.Left,-m_RootPanel.Top,m_RootPanel.Width,m_RootPanel.Height + m_RootPanel.Top)
 	xpnl_BackgroundPanel.Color = xui.Color_ARGB(0,0,0,0)
 	
 	m_InputParent = InputView.Parent
 	
 	xiv_RefreshImage = CreateImageView("")
 	xiv_RefreshImage.Visible = False
-	xpnl_BackgroundPanel.AddView(xiv_RefreshImage,RootPanel.Left,RootPanel.Top,RootPanel.Width,RootPanel.Height)
+	xpnl_BackgroundPanel.AddView(xiv_RefreshImage,m_RootPanel.Left,m_RootPanel.Top,m_RootPanel.Width,m_RootPanel.Height)
 	
 End Sub
 
@@ -56,32 +56,35 @@ Public Sub Show
 		g_InputViewSource.RootLeft = ViewScreenPosition(m_InputView)(0)
 		g_InputViewSource.RootTop = ViewScreenPosition(m_InputView)(1)
 		
+		#If B4I
 		xiv_RefreshImage.SetBitmap(m_RootPanel.Snapshot)
 		xiv_RefreshImage.Visible = True
+		#End if
 		xpnl_BackgroundPanel.SetVisibleAnimated(0,True)
 		
 		Sleep(0)
 		
-				#If B4A or B4I
+		#If B4I
 		Dim ThisDummyTextField As B4XView = DummyTextField
 		#End If
 		
 		m_InputView.RemoveViewFromParent
 		xpnl_BackgroundPanel.AddView(m_InputView,g_InputViewSource.RootLeft,g_InputViewSource.RootTop,g_InputViewSource.Width,g_InputViewSource.Height)
 		m_InputView.RequestFocus
-				#If B4A or B4I
+		#If B4I
 		ThisDummyTextField.RemoveViewFromParent
 		#End If
 		
-'		Sleep(2000)
-'		Log("jetzt")
+		'Sleep(2000)
+		'Log("jetzt")
 		xiv_RefreshImage.Visible = False
-		'xpnl_BackgroundPanel.SetVisibleAnimated(250,True)
+		xpnl_BackgroundPanel.SetVisibleAnimated(250,True)
 		xpnl_BackgroundPanel.SetColorAnimated(250,xpnl_BackgroundPanel.Color,xui.Color_ARGB(152,0,0,0))
 		
 	End If
 End Sub
 
+#If B4I
 'A dummy textfield to keep the keyboard open if the parent of the target textfield is changing
 Private Sub DummyTextField As B4XView
 	Dim tmpTextField As TextField
@@ -90,6 +93,7 @@ Private Sub DummyTextField As B4XView
 	tmpTextField.RequestFocus
 	Return tmpTextField
 End Sub
+	#End If
 
 Public Sub Close
 	xpnl_BackgroundPanel.SetVisibleAnimated(150,False)
@@ -130,9 +134,12 @@ Private Sub ViewScreenPosition (view As B4XView) As Int()
     
 	Dim leftTop(2) As Int
     #IF B4A
-    Dim JO As JavaObject = view
-    JO.RunMethod("getLocationOnScreen", Array As Object(leftTop))
-    leftTop(1) = leftTop(1) - view.Height
+	Dim parent As B4XView = view
+	Do While parent.IsInitialized and parent <> m_RootPanel
+		leftTop(0) = leftTop(0) + parent.Left
+		leftTop(1) = leftTop(1) + parent.Top
+		parent = parent.Parent
+	Loop
     #Else If B4I
 	'https://www.b4x.com/android/forum/threads/absolute-position-of-view.56821/#content
     Dim parent As B4XView = view
