@@ -10,6 +10,6 @@ ModuleClosedNodes0=4
 ModuleClosedNodes1=
 ModuleClosedNodes2=
 ModuleClosedNodes3=1
-NavigationStack=AS_AutoComplete,Resize,98,2,AS_AutoComplete,Show,73,6,AS_AutoComplete,Close,93,4,B4XMainPage,TextField1_TextChanged,46,0,B4XMainPage,B4XPage_Created,29,6,AS_AutoComplete,CreateImageView,164,0,AS_SelectionList,SetLayoutAnimated,1377,0,AS_SelectionList,DesignerCreateView,225,6,AS_SelectionList,Class_Globals,124,0,AS_SelectionList,setTheme,128,0
+NavigationStack=AS_SelectionList,ColorToHex,1416,0,AS_SelectionList,getSelectionIconAlignment_Right,1414,0,B4XMainPage,B4XPage_Resize,33,0,B4XMainPage,TextField1_TextChanged,49,0,B4XMainPage,AS_TextFieldAdvanced1_TextChanged,54,0,Visual Designer,frm_main.bil,-100,3,AS_AutoComplete,DummyTextField,124,0,B4XMainPage,Class_Globals,12,0,B4XMainPage,B4XPage_Created,30,2,AS_AutoComplete,Show,110,6
 SelectedBuild=0
 VisibleModules=3,1,2

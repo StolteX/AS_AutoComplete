@@ -108,7 +108,16 @@ Public Sub Show
 		
 		m_InputView.RemoveViewFromParent
 		xpnl_BackgroundPanel.AddView(m_InputView,g_InputViewSource.RootLeft,g_InputViewSource.RootTop,g_InputViewSource.Width,g_InputViewSource.Height)
-		m_InputView.RequestFocus
+		'm_InputView.RequestFocus
+		
+		If xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
+			CallSub(m_InputView.Tag,"Focus")
+		else If xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
+			CallSub(m_InputView.Tag,"RequestFocusAndShowKeyboard")
+		Else
+			m_InputView.RequestFocus
+		End If
+		
 		#If B4I
 		ThisDummyTextField.RemoveViewFromParent
 		#End If
@@ -213,6 +222,7 @@ Private Sub FetchNewData(SearchText As String)
         
 		Dim DR As ResultSet = g_DataSource1.Database.ExecQuery2(Query, lstParameters)
         
+		AS_SelectionList1.StartRefresh
 		' Ergebnisse verarbeiten
 		AS_SelectionList1.Clear
 		AS_SelectionList1.SearchText = SearchText
@@ -220,7 +230,8 @@ Private Sub FetchNewData(SearchText As String)
 			AS_SelectionList1.AddItem(DR.GetString(g_DataSource1.DisplayTextColumn), Null, DR.GetString(g_DataSource1.ValueColumn))
 		Loop
 		DR.Close
-        
+		AS_SelectionList1.StopRefresh
+		
 	End If
 End Sub
 

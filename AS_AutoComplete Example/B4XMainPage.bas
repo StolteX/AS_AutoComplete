@@ -16,6 +16,7 @@ Sub Class_Globals
 	Private xui As XUI
 	Private TextField1 As B4XView
 	Private AS_AutoComplete1 As AS_AutoComplete
+	Private AS_TextFieldAdvanced1 As AS_TextFieldAdvanced
 End Sub
 
 Public Sub Initialize
@@ -29,7 +30,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	
 	B4XPages.SetTitle(Me,"AS_AutoComplete Example")
 	
-	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,TextField1)
+	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,AS_TextFieldAdvanced1.mBase)
 	#If B4A
 	TextField1.As(EditText).Background = BackGround(xui.Color_Black)
 	#End IF
@@ -55,3 +56,7 @@ Sub BackGround(Color As Int) As ColorDrawable
 End Sub
 
 #End If
+
+Private Sub AS_TextFieldAdvanced1_TextChanged(Text As String)
+	AS_AutoComplete1.TextChanged(Text)
+End Sub
