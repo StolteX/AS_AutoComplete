@@ -30,7 +30,11 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	B4XPages.SetTitle(Me,"AS_AutoComplete Example")
 	
 	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,TextField1)
+	#If B4A
 	TextField1.As(EditText).Background = BackGround(xui.Color_Black)
+	#End IF
+	
+	
 End Sub
 
 Private Sub B4XPage_Resize (Width As Int, Height As Int)
@@ -41,9 +45,13 @@ Private Sub TextField1_TextChanged (Old As String, New As String)
 	AS_AutoComplete1.TextChanged(New)
 End Sub
 
+#If B4A
+
 Sub BackGround(Color As Int) As ColorDrawable
 	Dim cdb As ColorDrawable
 
 	cdb.Initialize(Color, 5dip)
 	Return cdb
 End Sub
+
+#End If

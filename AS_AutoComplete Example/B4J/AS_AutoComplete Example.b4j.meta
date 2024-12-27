@@ -10,6 +10,6 @@ ModuleClosedNodes0=1,4
 ModuleClosedNodes1=
 ModuleClosedNodes2=
 ModuleClosedNodes3=1
-NavigationStack=B4XMainPage,B4XPage_Resize,30,3,B4XMainPage,B4XPage_Created,24,5,AS_AutoComplete,Class_Globals,14,0,AS_AutoComplete,Show,43,6,AS_AutoComplete,Resize,63,0,AS_AutoComplete,Initialize,27,6
+NavigationStack=AS_SelectionList,DesignerCreateView,272,6,AS_AutoComplete,Initialize,47,6,AS_SelectionList,AddItem,374,0,AS_SelectionList,AddItemIntern,768,2,AS_SelectionList,SearchByText,471,6,AS_SelectionList,Clear,405,1,AS_SelectionList,RebuildList,439,1,AS_SelectionList,ClearSelections,527,0,AS_SelectionList,SearchByValue,510,0,AS_AutoComplete,Class_Globals,0,0,AS_AutoComplete,Resize,124,0
 SelectedBuild=0
 VisibleModules=3,1,2
