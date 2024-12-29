@@ -9,12 +9,12 @@ Updates
 V1.00
 	-Release
 #End If
-	
+
 #Event: ItemClicked(Item As AS_SelectionList_Item)
 
 Sub Class_Globals
 	Type AS_AutoComplete_InputViewSource(Left As Int,Top As Int,Width As Int,Height As Int,RootLeft As Int,RootTop As Int)
-	Type AS_AutoComplete_DataSource1(Database As SQL,Query As String,SearchColumns() As String,DisplayTextColumn As String,ValueColumn As String)
+	Type AS_AutoComplete_DataSource1(Database As SQL,TableName As String,SearchColumn As String,ValueColumn As String)
 	
 	Private g_DataSource1 As AS_AutoComplete_DataSource1
 	
@@ -40,6 +40,9 @@ Sub Class_Globals
 	Private m_AutoCloseOnItemClick As Boolean = True
 	Private m_IgnoreTextChange As Boolean = False
 	Private m_TextField2ListGap As Float = 5dip
+	Private m_AutoCloseOnNoResults As Boolean = False
+	Private m_KeyboardHeight As Float
+	Private m_AnimationDuration As Long = 150
 	
 End Sub
 
@@ -84,15 +87,18 @@ End Sub
 #Region Methods
 
 Public Sub Show
-	If xpnl_BackgroundPanel.Visible = False Then
+	If xpnl_BackgroundPanel.Visible = False And isOpen = False Then
 		isOpen = True
-		g_InputViewSource.Initialize
-		g_InputViewSource.Left = m_InputView.Left
-		g_InputViewSource.Top = m_InputView.Top
-		g_InputViewSource.Width = m_InputView.Width
-		g_InputViewSource.Height = m_InputView.Height
-		g_InputViewSource.RootLeft = ViewScreenPosition(m_InputView)(0)
-		g_InputViewSource.RootTop = ViewScreenPosition(m_InputView)(1)
+		
+		If m_InputView.Parent = m_InputParent Then
+			g_InputViewSource.Initialize
+			g_InputViewSource.Left = m_InputView.Left
+			g_InputViewSource.Top = m_InputView.Top
+			g_InputViewSource.Width = m_InputView.Width
+			g_InputViewSource.Height = m_InputView.Height
+			g_InputViewSource.RootLeft = ViewScreenPosition(m_InputView)(0)
+			g_InputViewSource.RootTop = ViewScreenPosition(m_InputView)(1)
+		End If
 		
 		#If B4I
 		xiv_RefreshImage.SetBitmap(m_RootPanel.Snapshot)
@@ -100,7 +106,7 @@ Public Sub Show
 		#End if
 		xpnl_BackgroundPanel.SetVisibleAnimated(0,True)
 		
-		Sleep(0)
+		'Sleep(0)
 		
 		#If B4I
 		Dim ThisDummyTextField As B4XView = DummyTextField
@@ -109,14 +115,7 @@ Public Sub Show
 		m_InputView.RemoveViewFromParent
 		xpnl_BackgroundPanel.AddView(m_InputView,g_InputViewSource.RootLeft,g_InputViewSource.RootTop,g_InputViewSource.Width,g_InputViewSource.Height)
 		'm_InputView.RequestFocus
-		
-		If xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
-			CallSub(m_InputView.Tag,"Focus")
-		else If xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
-			CallSub(m_InputView.Tag,"RequestFocusAndShowKeyboard")
-		Else
-			m_InputView.RequestFocus
-		End If
+		SetInputViewFocus
 		
 		#If B4I
 		ThisDummyTextField.RemoveViewFromParent
@@ -129,9 +128,19 @@ Public Sub Show
 		'Sleep(2000)
 		'Log("jetzt")
 		xiv_RefreshImage.Visible = False
-		xpnl_BackgroundPanel.SetVisibleAnimated(250,True)
-		xpnl_BackgroundPanel.SetColorAnimated(250,xpnl_BackgroundPanel.Color,xui.Color_ARGB(152,0,0,0))
+		xpnl_BackgroundPanel.SetVisibleAnimated(m_AnimationDuration,True)
+		xpnl_BackgroundPanel.SetColorAnimated(m_AnimationDuration,xpnl_BackgroundPanel.Color,xui.Color_ARGB(152,0,0,0))
 		
+	End If
+End Sub
+
+Private Sub SetInputViewFocus
+	If xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
+		CallSub(m_InputView.Tag,"Focus")
+	else If xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
+		CallSub(m_InputView.Tag,"RequestFocusAndShowKeyboard")
+	Else
+		m_InputView.RequestFocus
 	End If
 End Sub
 
@@ -140,19 +149,35 @@ End Sub
 Private Sub DummyTextField As B4XView
 	Dim tmpTextField As TextField
 	tmpTextField.Initialize("")
+	tmpTextField.Text = m_InputView.Text
 	xpnl_BackgroundPanel.AddView(tmpTextField,0,0,0,0)
-	tmpTextField.RequestFocus
+	If m_KeyboardHeight > 0 Then tmpTextField.RequestFocus
 	Return tmpTextField
 End Sub
 	#End If
 
 Public Sub Close
 	isOpen = False
-	xpnl_BackgroundPanel.SetVisibleAnimated(150,False)
+	xpnl_BackgroundPanel.SetVisibleAnimated(m_AnimationDuration,False)
+	
+	If m_KeyboardHeight > 0 Then
+		#If B4I
+		Dim ThisDummyTextField As B4XView = DummyTextField
+		#End If
+	End If
 	
 	m_InputView.RemoveViewFromParent
 	m_InputParent.AddView(m_InputView,g_InputViewSource.Left,g_InputViewSource.Top,g_InputViewSource.Width,g_InputViewSource.Height)
-	Sleep(150)
+	If m_KeyboardHeight > 0 Then SetInputViewFocus
+	
+	If m_KeyboardHeight > 0 Then
+		#If B4I
+		ThisDummyTextField.RemoveViewFromParent
+		#End If
+	End If
+	
+	Sleep(m_AnimationDuration)
+	
 	xpnl_BackgroundPanel.Color = xui.Color_Transparent
 End Sub
 
@@ -167,58 +192,58 @@ Public Sub Resize(Width As Float,Height As Float)
 	AS_SelectionList1.Base_Resize(g_InputViewSource.Width,AS_SelectionList1.ItemProperties.Height*m_MaxVisibleItems)
 End Sub
 
+'The view can automatically keep the items in the list visible even when the keyboard is out
+'And the keyboard remains open when the menu is closed
+Public Sub KeyboardStateChanged (Height As Float)
+	m_KeyboardHeight = Height
+End Sub
+
+
 Public Sub TextChanged(Text As String)
 	If m_IgnoreTextChange Then Return
 	If Text.Length >= m_SuggestionMatchCount Then
-		Show
-		FetchNewData(Text)
+		If FetchNewData(Text) Then Show
 	Else if isOpen Then
 		Close
 	End If
 End Sub
 
-Private Sub FetchNewData(SearchText As String)
+Private Sub FetchNewData(SearchText As String) As Boolean
+	
 	If g_DataSource1.IsInitialized Then
         
 		Dim lstParameters As List
 		lstParameters.Initialize
         
 		Dim Query As String = ""
-		Query = g_DataSource1.Query
-        
+		Query = $"SELECT ${g_DataSource1.SearchColumn} FROM ${g_DataSource1.TableName}"$
+
 		Dim WhereClause As StringBuilder
-		Dim GroupByClause As StringBuilder
 		Dim OrderByClause As StringBuilder
 		WhereClause.Initialize
-		GroupByClause.Initialize
 		OrderByClause.Initialize
-        
+
 		Dim Counter As Int = 0
-		For Each ColumnName As String In g_DataSource1.SearchColumns
-			' WHERE-Klausel für Teilstring-Suche
-			If Counter > 0 Then WhereClause.Append(" OR ")
-			WhereClause.Append(ColumnName).Append(" LIKE ?")
-			lstParameters.Add("%" & SearchText & "%")
-            
-			' GROUP BY für eindeutige Einträge
-			If Counter > 0 Then GroupByClause.Append(", ")
-			GroupByClause.Append(ColumnName)
-            
-			' ORDER BY für Treffer an erster Stelle
-			If Counter > 0 Then OrderByClause.Append(", ")
-			OrderByClause.Append("CASE WHEN ").Append(ColumnName).Append(" LIKE ? THEN 0 ELSE 1 END")
-			lstParameters.Add(SearchText & "%") ' Treffer nur am Anfang
-			Counter = Counter + 1
-		Next
-        
+
+		' WHERE-Klausel für Teilstring-Suche
+		If WhereClause.Length > 0 Then WhereClause.Append(" OR ")
+		WhereClause.Append(g_DataSource1.SearchColumn).Append(" LIKE ?")
+		lstParameters.Add("%" & SearchText & "%")
+
+		' ORDER BY für Treffer an erster Stelle
+		If OrderByClause.Length > 0 Then OrderByClause.Append(", ")
+		OrderByClause.Append("CASE WHEN ").Append(g_DataSource1.SearchColumn).Append(" LIKE ? THEN 0 ELSE 1 END")
+		lstParameters.Add(SearchText & "%") ' Treffer nur am Anfang
+		Counter = Counter + 1
+
 		' Finaler Query-Aufbau
 		Query = Query & " WHERE " & WhereClause.ToString
-		If GroupByClause.Length > 0 Then
-			Query = Query & " GROUP BY " & GroupByClause.ToString
-		End If
+		' GROUP BY entfernen, wenn nicht benötigt
+		Query = Query & " GROUP BY " & g_DataSource1.SearchColumn
 		Query = Query & " ORDER BY " & OrderByClause.ToString
+
         
-		Log(Query)
+		'Log(Query)
         
 		Dim DR As ResultSet = g_DataSource1.Database.ExecQuery2(Query, lstParameters)
         
@@ -227,12 +252,17 @@ Private Sub FetchNewData(SearchText As String)
 		AS_SelectionList1.Clear
 		AS_SelectionList1.SearchText = SearchText
 		Do While DR.NextRow
-			AS_SelectionList1.AddItem(DR.GetString(g_DataSource1.DisplayTextColumn), Null, DR.GetString(g_DataSource1.ValueColumn))
+			AS_SelectionList1.AddItem(DR.GetString(g_DataSource1.SearchColumn), Null, DR.GetString(g_DataSource1.ValueColumn))
 		Loop
 		DR.Close
 		AS_SelectionList1.StopRefresh
 		
 	End If
+	
+	If AS_SelectionList1.Size = 0 And m_AutoCloseOnNoResults Then Close
+	
+	Return AS_SelectionList1.Size > 0
+	
 End Sub
 
 
@@ -240,12 +270,32 @@ End Sub
 
 #Region Properties
 
-Public Sub SetDataSource1(Database As SQL,Query As String,SearchColumns() As String,DisplayTextColumn As String,ValueColumn As String) As AS_AutoComplete_DataSource1
+'The duration for the opening and closing animation of the popup
+'Default: 150 - Ticks/Milliseconds
+Public Sub setAnimationDuration(Duration As Long)
+	m_AnimationDuration = Duration
+End Sub
+
+Public Sub getAnimationDuration As Long
+	Return m_AnimationDuration
+End Sub
+
+'Closes the autocomplete if no search results are found
+'Default: False
+Public Sub setAutoCloseOnNoResults(AutoCloseOnNoResults As Boolean)
+	m_AutoCloseOnNoResults = AutoCloseOnNoResults
+	AS_SelectionList1.EmptyListTextVisibility = AutoCloseOnNoResults = False
+End Sub
+
+Public Sub getAutoCloseOnNoResults As Boolean
+	Return m_AutoCloseOnNoResults
+End Sub
+
+Public Sub SetDataSource1(Database As SQL,TableName As String,SearchColumn As String,ValueColumn As String) As AS_AutoComplete_DataSource1
 	g_DataSource1.Initialize
 	g_DataSource1.Database = Database
-	g_DataSource1.Query = Query
-	g_DataSource1.SearchColumns = SearchColumns
-	g_DataSource1.DisplayTextColumn = DisplayTextColumn
+	g_DataSource1.TableName = TableName
+	g_DataSource1.SearchColumn = SearchColumn
 	g_DataSource1.ValueColumn = ValueColumn
 	Return g_DataSource1
 End Sub
@@ -325,6 +375,10 @@ End Sub
 #End Region
 
 #Region ViewEvents
+
+'Private Sub AS_SelectionList1_CustomDrawItem(Item As Object,Views As AS_SelectionList_CustomDrawItemViews)
+'
+'End Sub
 
 Private Sub AS_SelectionList1_SelectionChanged
 	For Each Item As AS_SelectionList_Item In AS_SelectionList1.GetSelections
