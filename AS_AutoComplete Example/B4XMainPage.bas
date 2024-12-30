@@ -16,7 +16,7 @@ Sub Class_Globals
 	Private xui As XUI
 	Private TextField1 As B4XView
 	Private AS_AutoComplete1 As AS_AutoComplete
-	Private AS_TextFieldAdvanced1 As AS_TextFieldAdvanced
+
 End Sub
 
 Public Sub Initialize
@@ -30,7 +30,7 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	
 	B4XPages.SetTitle(Me,"AS_AutoComplete Example")
 	
-	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,AS_TextFieldAdvanced1.mBase)
+	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,TextField1)
 	#If B4A
 	TextField1.As(EditText).Background = BackGround(xui.Color_Black)
 	#End IF
@@ -59,4 +59,30 @@ End Sub
 
 Private Sub AS_TextFieldAdvanced1_TextChanged(Text As String)
 	AS_AutoComplete1.TextChanged(Text)
+End Sub
+
+'Private Sub AS_AutoComplete1_RequestNewData(SearchText As String)
+'	
+'	Dim lstItems As List
+'	lstItems.Initialize
+'	For i = 0 To 10 -1
+'		lstItems.Add(AS_AutoComplete1.CreateItem("Test " & i,Null,i))
+'	Next
+'	
+'	AS_AutoComplete1.SetNewData(lstItems)
+'	
+'End Sub
+
+
+
+Private Sub AS_AutoComplete1_RequestNewData(SearchText As String)
+	
+	Dim lstItems As List
+	lstItems.Initialize
+	For i = 0 To 10 -1
+		lstItems.Add(AS_AutoComplete1.CreateItem("Test " & i,Null,i))
+	Next
+	
+	AS_AutoComplete1.SetNewData(lstItems)
+	
 End Sub

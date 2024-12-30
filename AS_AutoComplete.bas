@@ -11,6 +11,7 @@ V1.00
 #End If
 
 #Event: ItemClicked(Item As AS_SelectionList_Item)
+#Event: RequestNewData(SearchText As String)
 
 Sub Class_Globals
 	Type AS_AutoComplete_InputViewSource(Left As Int,Top As Int,Width As Int,Height As Int,RootLeft As Int,RootTop As Int)
@@ -136,7 +137,7 @@ End Sub
 
 Private Sub SetInputViewFocus
 	If xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
-		CallSub(m_InputView.Tag,"Focus")
+		CallSub(m_InputView.Tag,"Focus")'Ignore
 	else If xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
 		CallSub(m_InputView.Tag,"RequestFocusAndShowKeyboard")
 	Else
@@ -157,6 +158,7 @@ End Sub
 	#End If
 
 Public Sub Close
+	If isOpen = False Then Return
 	isOpen = False
 	xpnl_BackgroundPanel.SetVisibleAnimated(m_AnimationDuration,False)
 	
@@ -202,13 +204,14 @@ End Sub
 Public Sub TextChanged(Text As String)
 	If m_IgnoreTextChange Then Return
 	If Text.Length >= m_SuggestionMatchCount Then
-		If FetchNewData(Text) Then Show
+		Wait For (FetchNewData(Text)) complete (ItemsFound As Boolean)
+		If ItemsFound Then Show
 	Else if isOpen Then
 		Close
 	End If
 End Sub
 
-Private Sub FetchNewData(SearchText As String) As Boolean
+Private Sub FetchNewData(SearchText As String) As ResumableSub
 	
 	If g_DataSource1.IsInitialized Then
         
@@ -216,7 +219,7 @@ Private Sub FetchNewData(SearchText As String) As Boolean
 		lstParameters.Initialize
         
 		Dim Query As String = ""
-		Query = $"SELECT ${g_DataSource1.SearchColumn} FROM ${g_DataSource1.TableName}"$
+		Query = $"SELECT ${g_DataSource1.SearchColumn},${g_DataSource1.ValueColumn} FROM ${g_DataSource1.TableName}"$
 
 		Dim WhereClause As StringBuilder
 		Dim OrderByClause As StringBuilder
@@ -239,7 +242,7 @@ Private Sub FetchNewData(SearchText As String) As Boolean
 		' Finaler Query-Aufbau
 		Query = Query & " WHERE " & WhereClause.ToString
 		' GROUP BY entfernen, wenn nicht benötigt
-		Query = Query & " GROUP BY " & g_DataSource1.SearchColumn
+		Query = Query & " GROUP BY " & g_DataSource1.SearchColumn & "," & g_DataSource1.ValueColumn
 		Query = Query & " ORDER BY " & OrderByClause.ToString
 
         
@@ -257,6 +260,16 @@ Private Sub FetchNewData(SearchText As String) As Boolean
 		DR.Close
 		AS_SelectionList1.StopRefresh
 		
+	Else 'Manual Mode
+			
+		AS_SelectionList1.StartRefresh
+		' Ergebnisse verarbeiten
+		AS_SelectionList1.Clear
+		AS_SelectionList1.SearchText = SearchText
+		RequestNewData(SearchText)
+		Wait For ManualFillingFinished
+		AS_SelectionList1.StopRefresh
+		
 	End If
 	
 	If AS_SelectionList1.Size = 0 And m_AutoCloseOnNoResults Then Close
@@ -265,6 +278,30 @@ Private Sub FetchNewData(SearchText As String) As Boolean
 	
 End Sub
 
+Public Sub CreateItem(Text As String,Icon As B4XBitmap,Value As Object) As AS_SelectionList_Item
+	Dim Item As AS_SelectionList_Item
+	Item.Initialize
+	Item.Text = Text
+	Item.Icon = Icon
+	Item.Value = Value
+	Return Item
+End Sub
+
+Public Sub SetDataSource1(Database As SQL,TableName As String,SearchColumn As String,ValueColumn As String) As AS_AutoComplete_DataSource1
+	g_DataSource1.Initialize
+	g_DataSource1.Database = Database
+	g_DataSource1.TableName = TableName
+	g_DataSource1.SearchColumn = SearchColumn
+	g_DataSource1.ValueColumn = ValueColumn
+	Return g_DataSource1
+End Sub
+
+Public Sub SetNewData(ItemList As List)
+	For Each Item As AS_SelectionList_Item In ItemList
+		AS_SelectionList1.AddItem2(Item)
+	Next
+	CallSubDelayed(Me,"ManualFillingFinished")
+End Sub
 
 #End Region
 
@@ -289,15 +326,6 @@ End Sub
 
 Public Sub getAutoCloseOnNoResults As Boolean
 	Return m_AutoCloseOnNoResults
-End Sub
-
-Public Sub SetDataSource1(Database As SQL,TableName As String,SearchColumn As String,ValueColumn As String) As AS_AutoComplete_DataSource1
-	g_DataSource1.Initialize
-	g_DataSource1.Database = Database
-	g_DataSource1.TableName = TableName
-	g_DataSource1.SearchColumn = SearchColumn
-	g_DataSource1.ValueColumn = ValueColumn
-	Return g_DataSource1
 End Sub
 
 'The Gap between the TextField and the top of the List
@@ -362,6 +390,12 @@ End Sub
 #End Region
 
 #Region Events
+
+Private Sub RequestNewData(SearchText As String)
+	If xui.SubExists(mCallBack, mEventName & "_RequestNewData",1) Then
+		CallSub2(mCallBack, mEventName & "_RequestNewData",SearchText)
+	End If
+End Sub
 
 Private Sub ItemClicked(Item As AS_SelectionList_Item)
 	m_IgnoreTextChange = True
