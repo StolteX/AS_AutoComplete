@@ -41,7 +41,7 @@ Sub Class_Globals
 	Private m_AutoCloseOnItemClick As Boolean = True
 	Private m_IgnoreTextChange As Boolean = False
 	Private m_TextField2ListGap As Float = 5dip
-	Private m_AutoCloseOnNoResults As Boolean = False
+	Private m_AutoCloseOnNoResults As Boolean = True
 	Private m_KeyboardHeight As Float
 	Private m_AnimationDuration As Long = 150
 	
@@ -136,13 +136,18 @@ Public Sub Show
 End Sub
 
 Private Sub SetInputViewFocus
-	If xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
+	
+'	Log(GetType(m_InputView))
+'	Log(GetType(m_InputView.Tag))
+	
+	If GetType(m_InputView.Tag).Contains("as_textfieldadvanced") And xui.SubExists(m_InputView.Tag,"Focus",0) Then 'AS_TextFieldAdvanced
 		CallSub(m_InputView.Tag,"Focus")'Ignore
-	else If xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
+	else If GetType(m_InputView.Tag).Contains("b4xfloattextfield") And xui.SubExists(m_InputView.Tag,"RequestFocusAndShowKeyboard",0) Then 'B4XFloatTextField
 		CallSub(m_InputView.Tag,"RequestFocusAndShowKeyboard")
 	Else
 		m_InputView.RequestFocus
 	End If
+	
 End Sub
 
 #If B4I
@@ -247,8 +252,16 @@ Private Sub FetchNewData(SearchText As String) As ResumableSub
 
         
 		'Log(Query)
-        
+        #If B4A
+		Dim Paras(lstParameters.Size) As String
+		For i = 0 To lstParameters.Size -1
+			Paras(i) = lstParameters.Get(i)
+		Next
+		
+		Dim DR As ResultSet = g_DataSource1.Database.ExecQuery2(Query,Paras)
+		#Else
 		Dim DR As ResultSet = g_DataSource1.Database.ExecQuery2(Query, lstParameters)
+		#End If
         
 		AS_SelectionList1.StartRefresh
 		' Ergebnisse verarbeiten
@@ -318,7 +331,7 @@ Public Sub getAnimationDuration As Long
 End Sub
 
 'Closes the autocomplete if no search results are found
-'Default: False
+'Default: True
 Public Sub setAutoCloseOnNoResults(AutoCloseOnNoResults As Boolean)
 	m_AutoCloseOnNoResults = AutoCloseOnNoResults
 	AS_SelectionList1.EmptyListTextVisibility = AutoCloseOnNoResults = False

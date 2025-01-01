@@ -5,13 +5,19 @@ FileGroup1=Default Group
 FileGroup2=Default Group
 Group=Default Group
 Library1=b4xpages
-Library2=icore
-Library3=xui views
-Library4=as_autocomplete
-Module1=|relative|..\B4XMainPage
+Library2=bctextengine
+Library3=icore
+Library4=irandomaccessfile
+Library5=isql
+Library6=xcustomlistview
+Library7=xui views
+Library8=as_textfieldadvanced
+Module1=|relative|..\..\AS_AutoComplete
+Module2=|relative|..\..\..\AS_SelectionList\AS_SelectionList
+Module3=|relative|..\B4XMainPage
 NumberOfFiles=2
-NumberOfLibraries=4
-NumberOfModules=1
+NumberOfLibraries=8
+NumberOfModules=3
 Version=8.45
 @EndOfDesignText@
 'Code module

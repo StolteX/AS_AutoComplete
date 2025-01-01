@@ -19,6 +19,12 @@ Sub Class_Globals
 
 	Dim sql1 As SQL
 
+	Private AS_TextFieldAdvanced1 As AS_TextFieldAdvanced
+	Private B4XFloatTextField1 As B4XFloatTextField
+	
+	#If B4A
+	Dim ime As IME
+	#End If
 End Sub
 
 Public Sub Initialize
@@ -31,6 +37,10 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	Root.LoadLayout("frm_main")
 	
 	B4XPages.SetTitle(Me,"AS_AutoComplete Example")
+	
+	#If B4A
+	ime.Initialize("ime")
+	#End If
 	
 	xui.SetDataFolder("AS_AutoCompleteExample")
 	Wait For (File.CopyAsync(File.DirAssets, "Countries.db", xui.DefaultFolder, "Countries.db")) Complete (Success As Boolean)
@@ -46,13 +56,13 @@ Private Sub B4XPage_Created (Root1 As B4XView)
 	
 	
 	
-	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,TextField1)
+	AS_AutoComplete1.Initialize(Me,"AS_AutoComplete1",Root,B4XFloatTextField1.mBase)
 	AS_AutoComplete1.SetDataSource1(sql1,"dt_Country","name","code")
 	
 	#If B4A
 	TextField1.As(EditText).Background = BackGround(xui.Color_Black)
 	#End IF
-
+	AS_AutoComplete1.AutoCloseOnNoResults = True
 	
 End Sub
 
@@ -75,11 +85,40 @@ End Sub
 
 #End If
 
+'Private Sub AS_AutoComplete1_RequestNewData(SearchText As String)
+'	
+'	Dim lstItems As List
+'	lstItems.Initialize
+'	For i = 0 To 10 -1
+'		lstItems.Add(AS_AutoComplete1.CreateItem("Test " & i,Null,i))
+'	Next
+'	
+'	AS_AutoComplete1.SetNewData(lstItems)
+'	
+'End Sub
+
+
+
+'Private Sub AS_AutoComplete1_RequestNewData(SearchText As String)
+'	
+'	Dim lstItems As List
+'	lstItems.Initialize
+'	For i = 0 To 10 -1
+'		lstItems.Add(AS_AutoComplete1.CreateItem("Test " & i,Null,i))
+'	Next
+'	
+'	AS_AutoComplete1.SetNewData(lstItems)
+'	
+'End Sub
+
+Private Sub AS_TextFieldAdvanced1_TextChanged(Text As String)
+	AS_AutoComplete1.TextChanged(Text)
+End Sub
+
 Private Sub TextField1_TextChanged (Old As String, New As String)
 	AS_AutoComplete1.TextChanged(New)
 End Sub
 
-Private Sub AS_AutoComplete1_ItemClicked(Item As AS_SelectionList_Item)
-	Log("ItemClicked: " & Item.Text & " (" & Item.Value & ")")
-	TextField1.Text = Item.Text
+Private Sub B4XFloatTextField1_TextChanged (Old As String, New As String)
+	AS_AutoComplete1.TextChanged(New)
 End Sub
