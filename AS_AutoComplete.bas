@@ -8,6 +8,10 @@ Version=8.45
 Updates
 V1.00
 	-Release
+V1.01
+	-New FontToBitmap
+	-New TextToBitmap
+	-BugFixes and Improvements
 #End If
 
 #Event: ItemClicked(Item As AS_SelectionList_Item)
@@ -482,6 +486,35 @@ Private Sub CreateImageView(EventName As String) As B4XView
 	Dim iv As ImageView
 	iv.Initialize(EventName)
 	Return iv
+End Sub
+
+'https://www.b4x.com/android/forum/threads/fontawesome-to-bitmap.95155/post-603250
+Public Sub FontToBitmap (text As String, IsMaterialIcons As Boolean, FontSize As Float, color As Int) As B4XBitmap
+	Dim p As B4XView = xui.CreatePanel("")
+	p.SetLayoutAnimated(0, 0, 0, 32dip, 32dip)
+	Dim cvs1 As B4XCanvas
+	cvs1.Initialize(p)
+	Dim fnt As B4XFont
+	If IsMaterialIcons Then fnt = xui.CreateMaterialIcons(FontSize) Else fnt = xui.CreateFontAwesome(FontSize)
+	Dim r As B4XRect = cvs1.MeasureText(text, fnt)
+	Dim BaseLine As Int = cvs1.TargetRect.CenterY - r.Height / 2 - r.Top
+	cvs1.DrawText(text, cvs1.TargetRect.CenterX, BaseLine, fnt, color, "CENTER")
+	Dim b As B4XBitmap = cvs1.CreateBitmap
+	cvs1.Release
+	Return b
+End Sub
+
+Public Sub TextToBitmap (Text As String, xFont As B4XFont, Color As Int) As B4XBitmap
+	Dim p As B4XView = xui.CreatePanel("")
+	p.SetLayoutAnimated(0, 0, 0, 32dip, 32dip)
+	Dim cvs1 As B4XCanvas
+	cvs1.Initialize(p)
+	Dim r As B4XRect = cvs1.MeasureText(Text, xFont)
+	Dim BaseLine As Int = cvs1.TargetRect.CenterY - r.Height / 2 - r.Top
+	cvs1.DrawText(Text, cvs1.TargetRect.CenterX, BaseLine, xFont, Color, "CENTER")
+	Dim b As B4XBitmap = cvs1.CreateBitmap
+	cvs1.Release
+	Return b
 End Sub
 
 #End Region
