@@ -12,6 +12,10 @@ V1.01
 	-New FontToBitmap
 	-New TextToBitmap
 	-BugFixes and Improvements
+V1.02
+	-New DisableTextChanged - If True then the menu is not opened via the TextChanged property
+		-e.g. If you assign a text to the TextField in the code, the menu would otherwise be opened
+	-BugFix DataSource1 had a logic error where duplicate entries were seen
 #End If
 
 #Event: ItemClicked(Item As AS_SelectionList_Item)
@@ -48,6 +52,7 @@ Sub Class_Globals
 	Private m_AutoCloseOnNoResults As Boolean = True
 	Private m_KeyboardHeight As Float
 	Private m_AnimationDuration As Long = 150
+	Private m_DisableTextChanged As Boolean = False
 	
 End Sub
 
@@ -211,7 +216,7 @@ End Sub
 
 
 Public Sub TextChanged(Text As String)
-	If m_IgnoreTextChange Then Return
+	If m_IgnoreTextChange Or m_DisableTextChanged Then Return
 	If Text.Length >= m_SuggestionMatchCount Then
 		Wait For (FetchNewData(Text)) complete (ItemsFound As Boolean)
 		If ItemsFound Then Show
@@ -228,7 +233,7 @@ Private Sub FetchNewData(SearchText As String) As ResumableSub
 		lstParameters.Initialize
         
 		Dim Query As String = ""
-		Query = $"SELECT ${g_DataSource1.SearchColumn},${g_DataSource1.ValueColumn} FROM ${g_DataSource1.TableName}"$
+		Query = $"SELECT ${g_DataSource1.SearchColumn},MAX(${g_DataSource1.ValueColumn}) AS ValueColumn FROM ${g_DataSource1.TableName}"$
 
 		Dim WhereClause As StringBuilder
 		Dim OrderByClause As StringBuilder
@@ -251,7 +256,7 @@ Private Sub FetchNewData(SearchText As String) As ResumableSub
 		' Finaler Query-Aufbau
 		Query = Query & " WHERE " & WhereClause.ToString
 		' GROUP BY entfernen, wenn nicht benötigt
-		Query = Query & " GROUP BY " & g_DataSource1.SearchColumn & "," & g_DataSource1.ValueColumn
+		Query = Query & " GROUP BY " & g_DataSource1.SearchColumn
 		Query = Query & " ORDER BY " & OrderByClause.ToString
 
         
@@ -272,7 +277,7 @@ Private Sub FetchNewData(SearchText As String) As ResumableSub
 		AS_SelectionList1.Clear
 		AS_SelectionList1.SearchText = SearchText
 		Do While DR.NextRow
-			AS_SelectionList1.AddItem(DR.GetString(g_DataSource1.SearchColumn), Null, DR.GetString(g_DataSource1.ValueColumn))
+			AS_SelectionList1.AddItem(DR.GetString(g_DataSource1.SearchColumn), Null, DR.GetString("ValueColumn"))
 		Loop
 		DR.Close
 		AS_SelectionList1.StopRefresh
@@ -323,6 +328,16 @@ End Sub
 #End Region
 
 #Region Properties
+
+'If True then the menu is not opened via the TextChanged property
+'e.g. If you assign a text to the TextField in the code, the menu would otherwise be opened
+Public Sub getDisableTextChanged As Boolean
+	Return m_DisableTextChanged
+End Sub
+
+Public Sub setDisableTextChanged(Disable As Boolean)
+	m_DisableTextChanged = Disable
+End Sub
 
 'The duration for the opening and closing animation of the popup
 'Default: 150 - Ticks/Milliseconds
