@@ -16,6 +16,14 @@ V1.02
 	-New DisableTextChanged - If True then the menu is not opened via the TextChanged property
 		-e.g. If you assign a text to the TextField in the code, the menu would otherwise be opened
 	-BugFix DataSource1 had a logic error where duplicate entries were seen
+V1.03
+	-New SetCustomLayout - You decide where the Auto complete list should appear
+	-New StandoutTextField
+		-Default: True
+		-If True, the background is darkened and the text field is brought to the foreground
+		-If False, the list is simply displayed
+			-The background panel remains transparent and the autocomplete is closed as soon as you click next to the menu
+	-New get SelectionList
 #End If
 
 #Event: ItemClicked(Item As AS_SelectionList_Item)
@@ -53,6 +61,9 @@ Sub Class_Globals
 	Private m_KeyboardHeight As Float
 	Private m_AnimationDuration As Long = 150
 	Private m_DisableTextChanged As Boolean = False
+	Private m_StandoutTextField As Boolean = True
+	
+	Private m_CustomLeft,m_CustomTop,m_CustomWidth,m_CustomHeight As Float = 0
 	
 End Sub
 
@@ -77,14 +88,14 @@ Public Sub Initialize (Callback As Object, EventName As String,RootPanel As B4XV
 	
 	xpnl_BackgroundPanel = xui.CreatePanel("xpnl_BackgroundPanel")
 	xpnl_BackgroundPanel.Visible = False
-	RootPanel.AddView(xpnl_BackgroundPanel,m_RootPanel.Left,-m_RootPanel.Top,m_RootPanel.Width,m_RootPanel.Height + m_RootPanel.Top)
+	RootPanel.AddView(xpnl_BackgroundPanel,m_RootPanel.Left,-m_RootPanel.Top,Max(1dip,m_RootPanel.Width),Max(1dip,m_RootPanel.Height + m_RootPanel.Top))
 	xpnl_BackgroundPanel.Color = xui.Color_ARGB(0,0,0,0)
 	
 	m_InputParent = InputView.Parent
 	
 	xiv_RefreshImage = CreateImageView("")
 	xiv_RefreshImage.Visible = False
-	xpnl_BackgroundPanel.AddView(xiv_RefreshImage,m_RootPanel.Left,m_RootPanel.Top,m_RootPanel.Width,m_RootPanel.Height)
+	xpnl_BackgroundPanel.AddView(xiv_RefreshImage,m_RootPanel.Left,m_RootPanel.Top,Max(1dip,m_RootPanel.Width),Max(1dip,m_RootPanel.Height))
 	
 	AS_SelectionList1.Initialize(Me,"AS_SelectionList1")
 	AS_SelectionList1.CreateViewPerCode(xpnl_BackgroundPanel,0,0,xpnl_BackgroundPanel.Width,100dip)
@@ -95,6 +106,31 @@ Public Sub Initialize (Callback As Object, EventName As String,RootPanel As B4XV
 End Sub
 
 #Region Methods
+
+'You decide where the Auto complete list should appear
+'<code>AS_AutoComplete1.SetCustomLayout(TextField1.Left,TextField1.Top + TextField1.Height + 20dip,TextField1.Width,400dip)</code>
+Public Sub SetCustomLayout(Left As Float,Top As Float,Width As Float,Height As Float)
+	
+	m_CustomLeft = Left
+	m_CustomTop = Top
+	m_CustomWidth = Width
+	m_CustomHeight = Height
+
+	If m_CustomLeft <> 0 Or m_CustomTop <> 0 Or m_CustomWidth <> 0 Or m_CustomHeight <> 0 Then
+		AS_SelectionList1.Base_Resize(m_CustomWidth,m_CustomHeight)
+		
+		If m_StandoutTextField = False Then
+			xpnl_BackgroundPanel.SetLayoutAnimated(0,m_CustomLeft,m_CustomTop,AS_SelectionList1.mBase.Width,AS_SelectionList1.mBase.Height)
+			AS_SelectionList1.mBase.left = 0
+			AS_SelectionList1.mBase.Top = 0
+		Else
+			AS_SelectionList1.mBase.left = m_CustomLeft
+			AS_SelectionList1.mBase.Top = m_CustomTop
+		End If
+
+	End If
+	
+End Sub
 
 Public Sub Show
 	If xpnl_BackgroundPanel.Visible = False And isOpen = False Then
@@ -118,29 +154,45 @@ Public Sub Show
 		
 		'Sleep(0)
 		
+		If m_StandoutTextField Then
+			
 		#If B4I
 		Dim ThisDummyTextField As B4XView = DummyTextField
 		#End If
+			
+			m_InputView.RemoveViewFromParent
+			xpnl_BackgroundPanel.AddView(m_InputView,g_InputViewSource.RootLeft,g_InputViewSource.RootTop,g_InputViewSource.Width,g_InputViewSource.Height)
+			'm_InputView.RequestFocus
+			SetInputViewFocus
+			
+			#If B4I
+			ThisDummyTextField.RemoveViewFromParent
+			#End If
+			
+		End If
 		
-		m_InputView.RemoveViewFromParent
-		xpnl_BackgroundPanel.AddView(m_InputView,g_InputViewSource.RootLeft,g_InputViewSource.RootTop,g_InputViewSource.Width,g_InputViewSource.Height)
-		'm_InputView.RequestFocus
-		SetInputViewFocus
+		If m_CustomLeft <> 0 Or m_CustomTop <> 0 Or m_CustomWidth <> 0 Or m_CustomHeight <> 0 Then
+			AS_SelectionList1.mBase.left = m_CustomLeft
+			AS_SelectionList1.mBase.Top = m_CustomTop
+			AS_SelectionList1.Base_Resize(m_CustomWidth,m_CustomHeight)
+		Else
+			AS_SelectionList1.mBase.left = g_InputViewSource.RootLeft
+			AS_SelectionList1.mBase.Top = g_InputViewSource.RootTop + g_InputViewSource.Height + m_TextField2ListGap
+			AS_SelectionList1.Base_Resize(g_InputViewSource.Width,AS_SelectionList1.ItemProperties.Height*m_MaxVisibleItems)
+		End If
 		
-		#If B4I
-		ThisDummyTextField.RemoveViewFromParent
-		#End If
-		
-		AS_SelectionList1.Base_Resize(g_InputViewSource.Width,AS_SelectionList1.ItemProperties.Height*m_MaxVisibleItems)
-		AS_SelectionList1.mBase.left = g_InputViewSource.RootLeft
-		AS_SelectionList1.mBase.Top = g_InputViewSource.RootTop + g_InputViewSource.Height + m_TextField2ListGap
+		If m_StandoutTextField = False Then
+			xpnl_BackgroundPanel.SetLayoutAnimated(0,AS_SelectionList1.mBase.Left,AS_SelectionList1.mBase.Top,AS_SelectionList1.mBase.Width,AS_SelectionList1.mBase.Height)
+			AS_SelectionList1.mBase.left = 0
+			AS_SelectionList1.mBase.Top = 0
+		End If
 		
 		'Sleep(2000)
 		'Log("jetzt")
 		xiv_RefreshImage.Visible = False
 		xpnl_BackgroundPanel.SetVisibleAnimated(m_AnimationDuration,True)
-		xpnl_BackgroundPanel.SetColorAnimated(m_AnimationDuration,xpnl_BackgroundPanel.Color,xui.Color_ARGB(152,0,0,0))
-		
+		xpnl_BackgroundPanel.SetColorAnimated(m_AnimationDuration,xpnl_BackgroundPanel.Color,IIf(m_StandoutTextField,xui.Color_ARGB(152,0,0,0),xui.Color_Transparent))
+
 	End If
 End Sub
 
@@ -176,20 +228,24 @@ Public Sub Close
 	isOpen = False
 	xpnl_BackgroundPanel.SetVisibleAnimated(m_AnimationDuration,False)
 	
-	If m_KeyboardHeight > 0 Then
+	If m_StandoutTextField Then
+		
+		If m_KeyboardHeight > 0 Then
 		#If B4I
-		Dim ThisDummyTextField As B4XView = DummyTextField
+			Dim ThisDummyTextField As B4XView = DummyTextField
 		#End If
-	End If
+		End If
 	
-	m_InputView.RemoveViewFromParent
-	m_InputParent.AddView(m_InputView,g_InputViewSource.Left,g_InputViewSource.Top,g_InputViewSource.Width,g_InputViewSource.Height)
-	If m_KeyboardHeight > 0 Then SetInputViewFocus
+		m_InputView.RemoveViewFromParent
+		m_InputParent.AddView(m_InputView,g_InputViewSource.Left,g_InputViewSource.Top,g_InputViewSource.Width,g_InputViewSource.Height)
+		If m_KeyboardHeight > 0 Then SetInputViewFocus
 	
-	If m_KeyboardHeight > 0 Then
+		If m_KeyboardHeight > 0 Then
 		#If B4I
-		ThisDummyTextField.RemoveViewFromParent
+			ThisDummyTextField.RemoveViewFromParent
 		#End If
+		End If
+		
 	End If
 	
 	Sleep(m_AnimationDuration)
@@ -205,7 +261,12 @@ Public Sub Resize(Width As Float,Height As Float)
 	g_InputViewSource.Width = m_InputView.Width
 	g_InputViewSource.Height = m_InputView.Height
 	
-	AS_SelectionList1.Base_Resize(g_InputViewSource.Width,AS_SelectionList1.ItemProperties.Height*m_MaxVisibleItems)
+	If m_CustomLeft <> 0 Or m_CustomTop <> 0 Or m_CustomWidth <> 0 Or m_CustomHeight <> 0 Then
+		AS_SelectionList1.Base_Resize(m_CustomWidth,m_CustomHeight)
+	Else
+		AS_SelectionList1.Base_Resize(g_InputViewSource.Width,AS_SelectionList1.ItemProperties.Height*m_MaxVisibleItems)
+	End If
+	
 End Sub
 
 'The view can automatically keep the items in the list visible even when the keyboard is out
@@ -329,6 +390,18 @@ End Sub
 
 #Region Properties
 
+'If True, the background is darkened and the text field is brought to the foreground
+'If False, the list is simply displayed
+'	-The background panel remains transparent and all around can be clicked without closing the list 
+'Default: True
+Public Sub setStandoutTextField(StandoutTextField As Boolean)
+	m_StandoutTextField = StandoutTextField
+End Sub
+
+Public Sub getStandoutTextField As Boolean
+	Return m_StandoutTextField
+End Sub
+
 'If True then the menu is not opened via the TextChanged property
 'e.g. If you assign a text to the TextField in the code, the menu would otherwise be opened
 Public Sub getDisableTextChanged As Boolean
@@ -418,6 +491,9 @@ Public Sub getSearchTextHighlightedColor As Int
 	Return AS_SelectionList1.SearchTextHighlightedColor
 End Sub
 
+Public Sub getSelectionList As AS_SelectionList
+	Return AS_SelectionList1
+End Sub
 
 #End Region
 
